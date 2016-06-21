@@ -77,17 +77,19 @@ class Bot:
                             'UP' : self.conf,
                             'DOWN' : self.conf,
                             'BOMB' : self.conf}
-
-        self.connect_and_listen()
+        self.run_bot = True
+        self.ret_val = None
 
     # start connection with server
     def connect_and_listen(self):
         self.conn = Connection(SERVER_IP, SERVER_PORT)
 
-        while True:
+        while self.run_bot:
             msg = self.conn.get_line()
             s_msg = msg.split()
             self.parse_table[s_msg[0]](s_msg)
+
+        return self.ret_val
 
     # init game := register player
     def init(self, args):
@@ -165,7 +167,10 @@ class Bot:
     # end game
     def end(self, args):
         self.alive = False
-        self.agent.end_game(self.players_s)
+        stop_bot = self.agent.end_game(self.players_s)
+        if stop_bot:
+            self.run_bot = False
+            self.ret_val = stop_bot
 
     # update scores
     def scores(self, args):

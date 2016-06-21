@@ -2,11 +2,9 @@ from .Agents.bot import *
 from .Agents.canvas_bot import CanvasBot
 from .Agents.human_agent import HumanAgent
 from .Agents.greedy_agent import GreedyAgent
-from .Agents.gp_agent import GP_Agent
-from .Agents.random_agent import RandomAgent
 from .Viewer.viewer import Viewer
 from .Viewer.canvas import MainFrame
-from .GPUtil.genome import Genome, NODES, TERMINALS
+from .GPUtil.gp_evolution import start_evolution
 from threading import Thread
 
 # players = [('YUVAL', '1', GreedyAgent('YUVAL')),
@@ -20,10 +18,11 @@ from threading import Thread
 #            ('GAL', '3', GreedyAgent('GAL'))]
 
 players = [('YUVAL', '1', HumanAgent()),
-           ('SUPERDUPERAGENT', '2', GP_Agent('SUPERDUPERAGENT', Genome(3, NODES, TERMINALS)))]
+           ('DINA', '2', GreedyAgent('DINA'))]
 
 def start_player(user, password, agent):
-    p = Bot(user, password, agent)
+    b = Bot(user, password, agent)
+    b.connect_and_listen()
 
 for (user, password, agent) in players:
     t = Thread(target=start_player, args=[user, password, agent])
@@ -37,5 +36,12 @@ v = Viewer()
 # create main frame thread
 t = Thread(target=viewer_thread, args=[v])
 t.start()
+
+v = Thread(target=)
 # put agent in a bot
 cnvsbot = CanvasBot(v)
+cnvsbot.connect_and_listen()
+
+e = Thread(target=start_evolution, args=[10, 1])
+e.start()
+print("HI")

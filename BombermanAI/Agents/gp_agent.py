@@ -161,4 +161,4 @@ class GP_Agent(Agent):
         return max_possible_val
 
     def end_game(self, players):
-        pass
+        return players[self.name].score
