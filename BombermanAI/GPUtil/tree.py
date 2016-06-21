@@ -1,4 +1,4 @@
-from node import *
+from .node import *
 from random import randint, random
 
 

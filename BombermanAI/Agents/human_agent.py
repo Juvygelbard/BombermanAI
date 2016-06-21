@@ -16,6 +16,7 @@ class HumanAgent(Agent):
 
     def init_game(self):
         self.key_q = Queue()
+        return True
 
     def end_game(self, players):
         pass

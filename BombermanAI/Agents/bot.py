@@ -91,8 +91,9 @@ class Bot:
 
     # init game := register player
     def init(self, args):
-        self.agent.init_game()
-        self.conn.send_line("REGISTER " + self.user + " " + self.password)
+        ready = self.agent.init_game()
+        if(ready):
+            self.conn.send_line("REGISTER " + self.user + " " + self.password)
 
     # got confirmation for registration, game starts
     def registered(self, args):

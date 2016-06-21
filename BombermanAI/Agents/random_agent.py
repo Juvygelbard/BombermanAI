@@ -6,7 +6,7 @@ class RandomAgent(Agent):
         seed()
 
     def init_game(self):
-        pass
+        return True
 
     def next_move(self, map, players, bombs):
         opt = ["ACTION LEFT",

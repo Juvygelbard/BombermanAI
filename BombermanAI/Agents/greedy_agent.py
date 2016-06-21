@@ -7,7 +7,7 @@ class GreedyAgent(Agent):
         self.name = name
 
     def init_game(self):
-        pass
+        return True
 
     def end_game(self, players):
         pass
