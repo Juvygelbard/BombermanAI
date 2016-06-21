@@ -301,10 +301,9 @@ class Compare(Node):
             return -1
 
     def to_str_tree(self, level=0):
-        return "    " * level + "compare (\n" + \
+        return "    " * level + "compare \n" + \
                 self.children[0].to_str_tree(level+1) + \
-                "    " * level + ", \n" + \
-                self.children[1].to_str_tree(level+1) + ")"
+                self.children[1].to_str_tree(level+1)
 
     def to_str_code(self):
         return "compare(" + self.children[0].to_str_code() + \

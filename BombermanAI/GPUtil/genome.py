@@ -11,16 +11,24 @@ class Genome(object):
     def __init__(self, max_depth, nodes, terminals):
         #  Will hold a tree for each possible action
         self.tree_set = [("NONE", Tree(max_depth, nodes, terminals)),
-                        ("BOMB", Tree(max_depth, nodes, terminals)),
-                        ("UP", Tree(max_depth, nodes, terminals)),
-                        ("DOWN", Tree(max_depth, nodes, terminals)),
-                        ("LEFT", Tree(max_depth, nodes, terminals)),
-                        ("RIGHT", Tree(max_depth, nodes, terminals))]
+                         ("BOMB", Tree(max_depth, nodes, terminals)),
+                         ("UP", Tree(max_depth, nodes, terminals)),
+                         ("DOWN", Tree(max_depth, nodes, terminals)),
+                         ("LEFT", Tree(max_depth, nodes, terminals)),
+                         ("RIGHT", Tree(max_depth, nodes, terminals))]
 
     def next_move(self, list_of_measures):
         tree_scores = [(t.evaluate_tree(list_of_measures), s) for (s, t) in self.tree_set]
         #  Gets a list of evaluations of all trees
         return max(tree_scores)[1]  # The highest score will be in the first index
 
-gen = Genome(10, nodes, terminals)
-gen.tree_set[0][1].print_as_code()
+    def crossover(self, other):
+        # Randomly chooses a tree type for both Genomes and performs crossover
+        index = randint(0, 5)
+        self.tree_set[index][1].perform_crossover(other.tree_set[index][1])
+        return index
+
+    def mutation(self):
+        index = randint(0, 5)
+        self.tree_set[index][1].perform_mutation(1)
+        return index
