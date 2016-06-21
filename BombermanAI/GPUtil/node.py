@@ -403,25 +403,25 @@ class InDanger_RT(MeasureNode):
         super().__init__("InDanger_RT")
 
 
-#  Represents the distance from the closest turn in direction UP
+#  Represents the distance from the closest turn if moving UP
 class NearTurn_UP(MeasureNode):
     def __init__(self):
         super().__init__("NearTurn_UP")
 
 
-#  Represents the distance from the closest turn in direction DOWN
+#  Represents the distance from the closest turn if moving DOWN
 class NearTurn_DN(MeasureNode):
     def __init__(self):
         super().__init__("NearTurn_DN")
 
 
-#  Represents the distance from the closest turn in direction LEFT
+#  Represents the distance from the closest turn if moving LEFT
 class NearTurn_LT(MeasureNode):
     def __init__(self):
         super().__init__("NearTurn_LT")
 
 
-#  Represents the distance from the closest turn in direction RIGHT
+#  Represents the distance from the closest turn if moving RIGHT
 class NearTurn_RT(MeasureNode):
     def __init__(self):
         super().__init__("NearTurn_RT")
