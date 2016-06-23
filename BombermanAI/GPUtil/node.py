@@ -30,6 +30,12 @@ class Node(object):
     def evaluate(self, measures):
         raise NotImplementedError
 
+    def clone(self):
+        clone = type(self)() # create an instance of the same class
+        clone.data = self.data
+        clone.children = [child.clone() for child in self.children]
+        return clone
+
     def to_str_tree(self):
         raise NotImplementedError
 

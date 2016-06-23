@@ -17,7 +17,7 @@ from threading import Thread
 #            ('DINA', '2', GreedyAgent('DINA')),
 #            ('GAL', '3', GreedyAgent('GAL'))]
 
-players = [('YUVAL', '1', HumanAgent()),
+players = [('GAL', '3', GreedyAgent('GAL')),
            ('DINA', '2', GreedyAgent('DINA'))]
 
 def start_player(user, password, agent):
@@ -31,17 +31,16 @@ for (user, password, agent) in players:
 def viewer_thread(viewer):
     mf = MainFrame(viewer)
 
+# start evolution thread
+e = Thread(target=start_evolution, args=[4, 5])
+e.start()
+
 # create viewer agent
 v = Viewer()
 # create main frame thread
 t = Thread(target=viewer_thread, args=[v])
 t.start()
 
-v = Thread(target=)
 # put agent in a bot
 cnvsbot = CanvasBot(v)
 cnvsbot.connect_and_listen()
-
-e = Thread(target=start_evolution, args=[10, 1])
-e.start()
-print("HI")

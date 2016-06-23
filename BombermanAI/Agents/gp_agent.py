@@ -7,8 +7,10 @@ class GP_Agent(Agent):
     def __init__(self, name, genome):
         self.name = name
         self.genome = genome
+        self.in_game = False
 
     def init_game(self):
+        self.in_game = True
         return True
 
     def next_move(self, map, players, bombs):
@@ -79,6 +81,7 @@ class GP_Agent(Agent):
         for m in best_moves:
             if m in possible_moves:
                 if m == 'NONE':
+                    print (self.name + " NOT MOVING")
                     return False
                 else:
                     return 'ACTION ' + m
@@ -161,4 +164,5 @@ class GP_Agent(Agent):
         return max_possible_val
 
     def end_game(self, players):
-        return players[self.name].score
+        if(self.in_game):
+            return players[self.name].score # TODO: normalize score

@@ -8,14 +8,20 @@ TERMINALS = [ConstantNum, RandomNum, NearEnemy_CLR_UP, NearEnemy_CLR_DN, NearEne
 NODES = [Add, Sub, Mul, Div, Min, Max, Abs, Neg, If_A_ge_B, Compare]
 
 class Genome(object):
-    def __init__(self, max_depth, nodes, terminals):
+    def __init__(self, max_depth, nodes, terminals, tree_set=None):
+        self.max_depth = max_depth
+        self.nodes = nodes
+        self.terminals = terminals
+        self.tree_set = tree_set
+
         #  Will hold a tree for each possible action
-        self.tree_set = [("NONE", Tree(max_depth, nodes, terminals)),
-                         ("BOMB", Tree(max_depth, nodes, terminals)),
-                         ("UP", Tree(max_depth, nodes, terminals)),
-                         ("DOWN", Tree(max_depth, nodes, terminals)),
-                         ("LEFT", Tree(max_depth, nodes, terminals)),
-                         ("RIGHT", Tree(max_depth, nodes, terminals))]
+        if(not self.tree_set):
+            self.tree_set = [("NONE", Tree(max_depth, nodes, terminals)),
+                             ("BOMB", Tree(max_depth, nodes, terminals)),
+                             ("UP", Tree(max_depth, nodes, terminals)),
+                             ("DOWN", Tree(max_depth, nodes, terminals)),
+                             ("LEFT", Tree(max_depth, nodes, terminals)),
+                             ("RIGHT", Tree(max_depth, nodes, terminals))]
 
     def next_move(self, list_of_measures):
         tree_scores = [(t.evaluate_tree(list_of_measures), s) for (s, t) in self.tree_set]
@@ -33,3 +39,7 @@ class Genome(object):
         index = randint(0, 5)
         self.tree_set[index][1].perform_mutation(1)
         return index
+
+    def clone(self):
+        new_treeset = [(s, t.clone()) for (s, t) in self.tree_set]
+        return Genome(self.max_depth, self.nodes, self.terminals, new_treeset)

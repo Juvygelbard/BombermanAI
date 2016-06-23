@@ -3,10 +3,13 @@ from random import randint, random
 
 
 class Tree(object):
-    def __init__(self, max_depth, nodes, terminals):
+    def __init__(self, max_depth, nodes, terminals,root=None):
         self.const_nodes = nodes
         self.const_terminals = terminals
-        self.root = self.gen_tree(max_depth, nodes, terminals)
+        self.max_depth = max_depth
+        self.root = root
+        if not self.root:
+            self.root = self.gen_tree(max_depth, nodes, terminals)
 
     def grow_tree(self, tree, max_depth, nodes, terminals):
         if max_depth == 1:
@@ -70,6 +73,9 @@ class Tree(object):
     def evaluate_tree(self, measures):
         return self.root.evaluate(measures)
 
+    def clone(self):
+        new_root = self.root.clone()
+        return Tree(self.max_depth, self.const_nodes, self.const_terminals, new_root)
 
 #  TIME FOR SOME FUCKING TESTS!!!
 # terminals = [ConstantNum, RandomNum, NearEnemy_CLR_UP, NearEnemy_CLR_DN, NearEnemy_CLR_LT, NearEnemy_CLR_RT,

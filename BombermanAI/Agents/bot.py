@@ -9,7 +9,7 @@ EXPLOSION_RADIUS = 3
 class Connection:
     def __init__(self, host, port):
         self.s = socket.socket()
-        self.s.connect((SERVER_IP, SERVER_PORT))
+        self.s.connect((host, port))
 
     def send_line(self, line):
         self.s.send(bytes(line, 'utf-8'))
@@ -53,7 +53,7 @@ class Player:
         self.status = 'DEAD'
 
     def set_score(self, score):
-        score = score
+        self.score = score
 
 class Bot:
     def __init__(self, user, password, agent):
@@ -82,14 +82,14 @@ class Bot:
 
     # start connection with server
     def connect_and_listen(self):
-        self.conn = Connection(SERVER_IP, SERVER_PORT)
+            self.conn = Connection(SERVER_IP, SERVER_PORT)
+            while self.run_bot:
+                msg = self.conn.get_line()
+                s_msg = msg.split()
+                self.parse_table[s_msg[0]](s_msg)
 
-        while self.run_bot:
-            msg = self.conn.get_line()
-            s_msg = msg.split()
-            self.parse_table[s_msg[0]](s_msg)
+            return self.ret_val
 
-        return self.ret_val
 
     # init game := register player
     def init(self, args):
@@ -167,16 +167,18 @@ class Bot:
     # end game
     def end(self, args):
         self.alive = False
-        stop_bot = self.agent.end_game(self.players_s)
-        if stop_bot:
-            self.run_bot = False
-            self.ret_val = stop_bot
 
     # update scores
     def scores(self, args):
         for x in range(int(args[1])):
             score = self.conn.get_line().split()
             self.players_s[score[0]].set_score(int(score[1]))
+
+        # send players with scores to agent
+        stop_bot = self.agent.end_game(self.players_s)
+        if stop_bot != None:
+            self.run_bot = False
+            self.ret_val = stop_bot
 
     # get a confirmation of player's action
     def conf(self, args):
