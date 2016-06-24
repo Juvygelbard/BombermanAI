@@ -7,6 +7,8 @@ TERMINALS = [ConstantNum, RandomNum, NearEnemy_CLR_UP, NearEnemy_CLR_DN, NearEne
 
 NODES = [Add, Sub, Mul, Div, Min, Max, Abs, Neg, If_A_ge_B, Compare]
 
+MUTATION_MAX_DEAPTH = 3
+
 class Genome(object):
     def __init__(self, max_depth, nodes, terminals, tree_set=None):
         self.max_depth = max_depth
@@ -37,7 +39,7 @@ class Genome(object):
 
     def mutation(self):
         index = randint(0, 5)
-        self.tree_set[index][1].perform_mutation(1)
+        self.tree_set[index][1].perform_mutation(MUTATION_MAX_DEAPTH)
         return index
 
     def clone(self):

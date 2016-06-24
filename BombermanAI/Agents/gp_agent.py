@@ -81,7 +81,7 @@ class GP_Agent(Agent):
         for m in best_moves:
             if m in possible_moves:
                 if m == 'NONE':
-                    print (self.name + " NOT MOVING")
+                    # print (self.name + " NOT MOVING")
                     return False
                 else:
                     return 'ACTION ' + m
@@ -165,4 +165,6 @@ class GP_Agent(Agent):
 
     def end_game(self, players):
         if(self.in_game):
-            return players[self.name].score # TODO: normalize score
+            if(len(players)>1):
+                self.in_game = False
+                return players[self.name].score / (len(players)-1) # normalize score

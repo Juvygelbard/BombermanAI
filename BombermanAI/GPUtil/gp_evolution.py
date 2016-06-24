@@ -6,8 +6,10 @@ from numpy.random import choice
 import pickle
 
 INIT_TREE_MAX_DEPTH = 3
+GAMES_PER_GENERATION = 3
 PLAYER_NAME = 'INDIVIDUAL'
 PLAYER_PASS = 'JOHNKOZA'
+PICKLE_NAME = 'generation_'
 
 # creates initial population
 def generate_random_pop(n, max_depth):
@@ -24,24 +26,30 @@ def rank_selection(pop_size):
     parents = choice(pop_size, 2, replace=False, p=prob)
     return parents[0], parents[1]
 
-def start_evolution(pop_size, generations, mutation_prob=0.1, elitism=2):
+def start_evolution(pop_size, generations, mutation_prob=0.2, elitism=2):
     pop = generate_random_pop(pop_size, INIT_TREE_MAX_DEPTH)
 
     for g in range(generations):
         # saving generation
-        f = open("gen_" + str(g) + ".pickle", "w")
+        f = open(PICKLE_NAME + str(g) + ".pickle", "wb")
         pickle.dump(pop, f)
         f.close()
         print("--------[GENERATION " + str(g) + "]--------")
         generation_scores = []
         # run generation games
         for i_num, genome in enumerate(pop):
-            my_name = PLAYER_NAME + "-" + str(g) +"-" + str(i_num+1)
+            my_name = PLAYER_NAME + "_" + str(g) +"_" + str(i_num+1)
             agent = GP_Agent(my_name, genome)
-            bot = Bot(my_name, PLAYER_PASS, agent)
-            score = bot.connect_and_listen()
-            generation_scores.append((score, genome))
+            score = 0
+            for game in range(GAMES_PER_GENERATION):
+                print(my_name + ": GAME " + str(game+1) + "/" + str(GAMES_PER_GENERATION))
+                bot = Bot(my_name, PLAYER_PASS, agent)
+                score += bot.connect_and_listen()
+                print("END GAME. MY SCORE: " + str(score))
+            mean_score = score/GAMES_PER_GENERATION
+            generation_scores.append((mean_score, genome))
         generation_scores.sort(reverse=True, key=lambda x: x[0])
+        print("MAX FITNESS FOR GENERATION: " + str(generation_scores[0][0]))
         next_gen = []
         # compute offsprings for next generation
         # first elitism

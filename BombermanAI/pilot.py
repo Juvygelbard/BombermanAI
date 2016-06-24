@@ -32,15 +32,15 @@ def viewer_thread(viewer):
     mf = MainFrame(viewer)
 
 # start evolution thread
-e = Thread(target=start_evolution, args=[4, 5])
+e = Thread(target=start_evolution, args=[20, 20])
 e.start()
 
-# create viewer agent
-v = Viewer()
-# create main frame thread
-t = Thread(target=viewer_thread, args=[v])
-t.start()
-
-# put agent in a bot
-cnvsbot = CanvasBot(v)
-cnvsbot.connect_and_listen()
+# # create viewer agent
+# v = Viewer()
+# # create main frame thread
+# t = Thread(target=viewer_thread, args=[v])
+# t.start()
+#
+# # put agent in a bot
+# cnvsbot = CanvasBot(v)
+# cnvsbot.connect_and_listen()

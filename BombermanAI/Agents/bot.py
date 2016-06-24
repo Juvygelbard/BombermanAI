@@ -76,9 +76,17 @@ class Bot:
                             'RIGHT' : self.conf,
                             'UP' : self.conf,
                             'DOWN' : self.conf,
-                            'BOMB' : self.conf}
+                            'BOMB' : self.conf,
+                            'E_INVALID_ACTION' : self.error_handling,
+                            'E_TOO_MANY_ACTIONS' : self.error_handling,
+                            'E_NOT_PLAYING' : self.error_handling,
+                            'E_NOT_INIT' : self.error_handling,
+                            'E_WRONG_PASS' : self.error_handling}
         self.run_bot = True
         self.ret_val = None
+
+    def error_handling(self, args): # TODO: handle server errors!
+        print(self.user + " " + args[0])
 
     # start connection with server
     def connect_and_listen(self):
