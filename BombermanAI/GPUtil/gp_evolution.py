@@ -3,12 +3,14 @@ from .genome import Genome, TERMINALS, NODES
 from ..Agents.gp_agent import GP_Agent
 from random import random
 from numpy.random import choice
+from threading import Thread
+from queue import Queue
 import pickle
 
 INIT_TREE_MAX_DEPTH = 3
 GAMES_PER_GENERATION = 3
 PLAYER_NAME = 'INDIVIDUAL'
-PLAYER_PASS = 'JOHNKOZA'
+PLAYER_PASS = 'JOHNKOZARULEZ'
 PICKLE_NAME = 'generation_'
 
 # creates initial population
@@ -18,7 +20,7 @@ def generate_random_pop(n, max_depth):
         ans.append(Genome(max_depth, NODES, TERMINALS))
     return ans
 
-# roulette wheel selection
+# preforming rank selection: returns 2
 def rank_selection(pop_size):
     total = sum(range(pop_size+1))
     prob = [(1+i)/total for i in range(pop_size)]
@@ -26,32 +28,74 @@ def rank_selection(pop_size):
     parents = choice(pop_size, 2, replace=False, p=prob)
     return parents[0], parents[1]
 
-def start_evolution(pop_size, generations, mutation_prob=0.2, elitism=2):
-    pop = generate_random_pop(pop_size, INIT_TREE_MAX_DEPTH)
+def play_individual(server, port, genome_q, server_q, result_q):
+    curr = genome_q.get(block=True)
+    gen, ind, genome = curr[0], curr[1], curr[2]
+    name = PLAYER_NAME + "_" + str(gen) +"_" + str(ind)
+    password = PLAYER_PASS
 
+    agent = GP_Agent(name, genome)
+    score = 0
+    for game in range(GAMES_PER_GENERATION):
+        print(name + ": GAME " + str(game+1) + "/" + str(GAMES_PER_GENERATION))
+        try:
+            bot = Bot(name, password, agent)
+            score += bot.connect_and_listen(server, port)
+        except:
+            print("ERROR RUNNING " + name + "; RESTARTING GAME")
+            server_q.put((server, port))
+            genome_q.put((gen, ind, genome))
+            return
+        print("END GAME. MY SCORE: " + str(score))
+    mean_score = score/GAMES_PER_GENERATION
+    # return result and release server
+    result_q.put((mean_score, genome))
+    server_q.put((server, port))
+
+def start_evolution(server_list, pop_size, generations, filename=None, mutation_prob=0.1, crossover_prob=0.8, elitism=2):
+    # either load an existing generation or generate initial population
+    if filename:
+        f = open(filename, "rb")
+        pop = pickle.load(f)
+    else:
+        pop = generate_random_pop(pop_size, INIT_TREE_MAX_DEPTH)
+
+    # init server queue
+    server_q = Queue()
+    for server in server_list:
+        server_q.put(server)
+
+    # start evolution
     for g in range(generations):
-        # saving generation
-        f = open(PICKLE_NAME + str(g) + ".pickle", "wb")
-        pickle.dump(pop, f)
-        f.close()
         print("--------[GENERATION " + str(g) + "]--------")
+        result_q = Queue()
         generation_scores = []
+
+        # init genome queue
+        genome_q = Queue()
+        for i, genome in enumerate(pop):
+            genome_q.put((g, i+1, genome))
+
         # run generation games
-        for i_num, genome in enumerate(pop):
-            my_name = PLAYER_NAME + "_" + str(g) +"_" + str(i_num+1)
-            agent = GP_Agent(my_name, genome)
-            score = 0
-            for game in range(GAMES_PER_GENERATION):
-                print(my_name + ": GAME " + str(game+1) + "/" + str(GAMES_PER_GENERATION))
-                bot = Bot(my_name, PLAYER_PASS, agent)
-                score += bot.connect_and_listen()
-                print("END GAME. MY SCORE: " + str(score))
-            mean_score = score/GAMES_PER_GENERATION
-            generation_scores.append((mean_score, genome))
+        while not genome_q.empty():
+            current_server = server_q.get(block=True)
+            t = Thread(target=play_individual, args=[current_server[0], current_server[1], genome_q, server_q, result_q])
+            t.start()
+
+        # get results
+        for i_num in range(pop_size):
+            generation_scores.append(result_q.get(block=True))
+
+        # compute offsprings for next generation
         generation_scores.sort(reverse=True, key=lambda x: x[0])
         print("MAX FITNESS FOR GENERATION: " + str(generation_scores[0][0]))
         next_gen = []
-        # compute offsprings for next generation
+
+        # saving generation according to score
+        f = open(PICKLE_NAME + str(g) + ".pickle", "wb")
+        pickle.dump([g for (s, g) in generation_scores], f)
+        f.close()
+
         # first elitism
         for i in range(elitism):
             next_gen.append(generation_scores[i][1])
@@ -60,10 +104,11 @@ def start_evolution(pop_size, generations, mutation_prob=0.2, elitism=2):
             parent1_idx, parent2_idx = rank_selection(pop_size)
             parent1, parent2 = generation_scores[parent1_idx][1], generation_scores[parent2_idx][1]
             child1, child2 = parent1.clone(), parent2.clone()
-            if(random() < 1-mutation_prob): # crossover
+            # crossover
+            if(random() < crossover_prob):
                 child1.crossover(child2)
-            else: # mutation
-                child1.mutation()
-                child2.mutation()
+            # mutation
+            child1.mutation(mutation_prob)
+            child2.mutation(mutation_prob)
             next_gen += [child1, child2]
         pop = next_gen

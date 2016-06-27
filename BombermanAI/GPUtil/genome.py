@@ -1,13 +1,13 @@
 from .tree import *
 
-TERMINALS = [ConstantNum, RandomNum, NearEnemy_CLR_UP, NearEnemy_CLR_DN, NearEnemy_CLR_LT, NearEnemy_CLR_RT,
+TERMINALS = [ConstantNum, RandomNum, CanMove_UP, CanMove_DN, CanMove_LT, CanMove_RT, NearEnemy_CLR_UP, NearEnemy_CLR_DN, NearEnemy_CLR_LT, NearEnemy_CLR_RT,
              NearEnemy_WALL_UP, NearEnemy_WALL_DN, NearEnemy_WALL_LT, NearEnemy_WALL_RT,
              InDanger_UP, InDanger_DN, InDanger_LT, InDanger_RT,
              NearTurn_UP, NearTurn_DN, NearTurn_LT, NearTurn_RT]  # Also Random
 
 NODES = [Add, Sub, Mul, Div, Min, Max, Abs, Neg, If_A_ge_B, Compare]
 
-MUTATION_MAX_DEAPTH = 3
+MUTATION_MAX_DEPTH = 3
 
 class Genome(object):
     def __init__(self, max_depth, nodes, terminals, tree_set=None):
@@ -31,16 +31,16 @@ class Genome(object):
         tree_scores.sort(reverse=True)
         return [s for (e, s) in tree_scores]  # sorted by score from high to low
 
+    # all trees are going thorough crossover
     def crossover(self, other):
-        # Randomly chooses a tree type for both Genomes and performs crossover
-        index = randint(0, 5)
-        self.tree_set[index][1].perform_crossover(other.tree_set[index][1])
-        return index
+        for (s1, t1), (s2, t2) in zip(self.tree_set, other.tree_set):
+            t1.perform_crossover(t2)
 
-    def mutation(self):
-        index = randint(0, 5)
-        self.tree_set[index][1].perform_mutation(MUTATION_MAX_DEAPTH)
-        return index
+    # each tree is going through mutation with [prob] probability
+    def mutation(self, prob):
+        for s, t in self.tree_set:
+            if random() < prob:
+                t.perform_mutation(MUTATION_MAX_DEPTH)
 
     def clone(self):
         new_treeset = [(s, t.clone()) for (s, t) in self.tree_set]

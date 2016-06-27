@@ -4,9 +4,9 @@ var crypto = require('crypto');
 var fs = require('fs');
 
 var authFile = './auth.json';
-var tickLength = 400;
+var tickLength = 500;
 var maxGameLength = 1000;
-var port = 8037;
+var port = process.argv[2];
 var mapSize = [13,15];
 var maxPlayers = 6;
 var bombTimer = 5;

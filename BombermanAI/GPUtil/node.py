@@ -336,6 +336,25 @@ class MeasureNode(Node):
     def to_str_code(self):
         return str(self.data)
 
+#  Indicates if the individual can move in direction UP
+class CanMove_UP(MeasureNode):
+    def __init__(self):
+        super().__init__("CanMove_UP")
+
+#  Indicates if the individual can move in direction DOWN
+class CanMove_DN(MeasureNode):
+    def __init__(self):
+        super().__init__("CanMove_DN")
+
+#  Indicates if the individual can move in direction LEFT
+class CanMove_LT(MeasureNode):
+    def __init__(self):
+        super().__init__("CanMove_LT")
+
+#  Indicates if the individual can move in direction RIGHT
+class CanMove_RT(MeasureNode):
+    def __init__(self):
+        super().__init__("CanMove_RT")
 
 #  Represents the distance from the closest enemy WITHOUT separating walls in direction UP
 class NearEnemy_CLR_UP(MeasureNode):

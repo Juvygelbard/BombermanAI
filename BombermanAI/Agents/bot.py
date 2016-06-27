@@ -63,6 +63,8 @@ class Bot:
         self.alive = False
         self.players_s = {}
         self.map_s = None
+        self.got_players = False
+        self.got_map = False
         self.parse_table = {'INIT' :self.init,
                             'MAP' : self.map,
                             'PLAYERS' : self.players,
@@ -89,8 +91,8 @@ class Bot:
         print(self.user + " " + args[0])
 
     # start connection with server
-    def connect_and_listen(self):
-            self.conn = Connection(SERVER_IP, SERVER_PORT)
+    def connect_and_listen(self, host=SERVER_IP, port=SERVER_PORT):
+            self.conn = Connection(host, port)
             while self.run_bot:
                 msg = self.conn.get_line()
                 s_msg = msg.split()

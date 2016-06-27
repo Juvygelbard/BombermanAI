@@ -27,6 +27,12 @@ class GP_Agent(Agent):
                 if bombs[y][x]:
                     d_map[y][x] = 'X'
 
+        # calculating can move measures
+        can_move_up = self.can_move(d_map, x_pos, y_pos, 0, -1)
+        can_move_down = self.can_move(d_map, x_pos, y_pos, 0, 1)
+        can_move_left = self.can_move(d_map, x_pos, y_pos, -1, 0)
+        can_move_right = self.can_move(d_map, x_pos, y_pos, 1, 0)
+
         # calculating in-danger measures
         in_danger_up = self.in_danger(d_map, x_pos, y_pos, 0, -1)
         in_danger_down = self.in_danger(d_map, x_pos, y_pos, 0, 1)
@@ -34,10 +40,10 @@ class GP_Agent(Agent):
         in_danger_right = self.in_danger(d_map, x_pos, y_pos, 1, 0)
 
         # calculating turn measure
-        near_turn_up = self.dist_to_turn(d_map, x_pos, y_pos, 0, -1, "vertical")
-        near_turn_down = self.dist_to_turn(d_map, x_pos, y_pos, 0, 1, "vertical")
-        near_turn_left = self.dist_to_turn(d_map, x_pos, y_pos, -1, 0, "horizontal")
-        near_turn_right = self.dist_to_turn(d_map, x_pos, y_pos, 1, 0, "horizontal")
+        near_turn_up = self.dist_to_turn(d_map, x_pos, y_pos, 0, -1, "horizontal")
+        near_turn_down = self.dist_to_turn(d_map, x_pos, y_pos, 0, 1, "horizontal")
+        near_turn_left = self.dist_to_turn(d_map, x_pos, y_pos, -1, 0, "vertical")
+        near_turn_right = self.dist_to_turn(d_map, x_pos, y_pos, 1, 0, "vertical")
 
         # add players to map
         marks = ['A', 'B', 'C', 'D', 'E']
@@ -57,7 +63,11 @@ class GP_Agent(Agent):
         dist_enemy_w_right = self.bfs(d_map, x_pos, y_pos, 1, 0, [0, 1], marks)
 
         # build measures dict
-        measures = {"NearEnemy_CLR_UP" : dist_enemy_c_up,
+        measures = {"CanMove_UP" : can_move_up,
+                    "CanMove_DN" : can_move_down,
+                    "CanMove_LT" : can_move_left,
+                    "CanMove_RT" : can_move_right,
+                    "NearEnemy_CLR_UP" : dist_enemy_c_up,
                     "NearEnemy_CLR_DN" : dist_enemy_c_down,
                     "NearEnemy_CLR_LT": dist_enemy_c_left,
                     "NearEnemy_CLR_RT": dist_enemy_c_right,
@@ -86,6 +96,12 @@ class GP_Agent(Agent):
                 else:
                     return 'ACTION ' + m
 
+    def can_move(self, map, x, y, d_x, d_y):
+        if 0<=y+d_y<len(map) and 0<=x+d_x<len(map[0]) and map[y+d_y][x+d_x]==0:
+            return 1
+        else:
+            return 0
+
     def in_danger(self, map, x, y, d_x, d_y):
         for i in range(1, EXPLOSION_RADIUS+1):
             if y+d_y*i<0 or y+d_y*i>=len(map) or x+d_x*i<0 or x+d_x*i>=len(map[0]): # end of map
@@ -98,20 +114,20 @@ class GP_Agent(Agent):
 
     def dist_to_turn(self, map, x, y, d_x, d_y, turn):
         max_possible_dist = max(len(map), len(map[0]))
-        for i in range(max_possible_dist):
-            if 0<=y+d_y*i<len(map) and 0<=x+d_x*i<len(map[0]): # end of map
+        for i in range(1, max_possible_dist):
+            if y+d_y*i<0 or y+d_y*i >= len(map) or x+d_x*i<0 or x+d_x*i >= len(map[0]): # end of map
                 return max_possible_dist
             elif map[y+d_y*i][x+d_x*i] in [1, 2]: # hit a wall
                 return max_possible_dist
             elif turn=="horizontal":
-                if x+d_x*i+1<len(map[0]) and map[y+d_y*i][x+d_x*i+1]==0: # turn right
+                if x+1<len(map[0]) and map[y+d_y*i][x+1]==0: # turn right
                     return i
-                elif x+d_x*i-1>=0 and map[y+d_y*i][x+d_x*i-1]==0: # turn left
+                elif x-1>=0 and map[y+d_y*i][x-1]==0: # turn left
                     return i
             elif turn=="vertical":
-                if y+d_y*i+1<len(map) and map[y+d_y*i+1][x+d_x*i]==0: # turn down
+                if y+1<len(map) and map[y+1][x+d_x*i]==0: # turn down
                     return i
-                elif y+d_y*i-1>=0 and map[y+d_y*i-1][x+d_x*i]==0: # turn up
+                elif y-1>=0 and map[y-1][x+d_x*i]==0: # turn up
                     return i
         return max_possible_dist
 
@@ -129,15 +145,19 @@ class GP_Agent(Agent):
 
     def bfs(self, map, x, y, d_x, d_y, walk, stop):
         q = Queue()
+
         # check if direction is legal
         max_possible_val = max(len(map), len(map[0]))
         if y+d_y<0 or y+d_y>=len(map) or x+d_x<0 or x+d_x>=len(map[0]):
             return max_possible_val
+
         # duplicate map and place me on map
         d_map = [[x for x in y] for y in map]
         d_map[y][x] = 'V'
+
         # push initial
         q.put((x+d_x, y+d_y, 1))
+
         # start bfs
         while not q.empty():
             # get next tile
@@ -148,7 +168,7 @@ class GP_Agent(Agent):
             if d_map[curr_y][curr_x] in stop:
                 return d
 
-            dirs = self.around_me(d_map, curr_x, curr_y, walk)
+            dirs = self.around_me(d_map, curr_x, curr_y, walk+stop)
             if 'UP' in dirs:
                 q.put((curr_x, curr_y-1, d+1))
             if 'DOWN' in dirs:

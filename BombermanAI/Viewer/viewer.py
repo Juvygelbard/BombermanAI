@@ -1,7 +1,11 @@
 from queue import Queue
 from ..Agents.bot import Agent, EXPLOSION_RADIUS
+from .canvas import MainFrame
 
 class Viewer(Agent):
+    def __init__(self):
+        self.blasts = []
+
     def next_move(self, map, players, bombs):
         # deep copy map
         map_n = [[x for x in y] for y in map]
@@ -35,7 +39,6 @@ class Viewer(Agent):
 
     def update_map(self, map):
         self.map_queue.put(map)
-
 
     def calc_blasts(self, x, y, map):
         ans = [(x, y)]
