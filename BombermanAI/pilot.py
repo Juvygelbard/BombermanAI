@@ -5,7 +5,7 @@ from .Agents.greedy_agent import GreedyAgent
 from threading import Thread
 
 POPULATION_SIZE = 30
-NUM_OF_GENERATIONS = 30
+NUM_OF_GENERATIONS = 71
 
 server_list = [('localhost', 8037),
                ('localhost', 8038),
@@ -39,5 +39,5 @@ for (user, password, agent, host, port) in players:
     t.start()
 
 # start evolution thread
-e = Thread(target=start_evolution, args=[server_list, POPULATION_SIZE, NUM_OF_GENERATIONS])
+e = Thread(target=start_evolution, args=[server_list, POPULATION_SIZE, NUM_OF_GENERATIONS, "generation_29.pickle"])
 e.start()

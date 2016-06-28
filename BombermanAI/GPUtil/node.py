@@ -5,9 +5,10 @@ TERMINAL_RATIO = 0.2
 
 # Class of all classes, oh mighty Node!
 class Node(object):
-    def __init__(self, data, is_terminal):
+    def __init__(self, data, is_terminal, depth=0):
         self.data = data
         self.isTerminal = is_terminal
+        self.depth = depth
         self.children = []
 
     def getData(self):
@@ -22,16 +23,13 @@ class Node(object):
                 classes.append(nodes[randint(0, len(nodes)-1)]) # Appends one random child at a time
             else:
                 classes.append(terminals[randint(0, len(terminals)-1)]) # Appends one random child at a time
-        self.children = [c() for c in classes]    # Constructs each child with its own Ctor
-
-    def get_children(self):
-        return self.children
+        self.children = [c(self.depth+1) for c in classes]    # Constructs each child with its own Ctor
 
     def evaluate(self, measures):
         raise NotImplementedError
 
     def clone(self):
-        clone = type(self)() # create an instance of the same class
+        clone = type(self)(self.depth) # create an instance of the same class
         clone.data = self.data
         clone.children = [child.clone() for child in self.children]
         return clone
@@ -46,17 +44,24 @@ class Node(object):
         list_of_nodes = []
         if not self.isTerminal:
             list_of_nodes.append(self)
-        for child in self.get_children():
+        for child in self.children:
             if not child.isTerminal:
                 list_of_nodes += child.get_non_terminal_list()
         return list_of_nodes
 
+    def get_height(self):
+        return 1 + max([c.get_height() for c in self.children] + [0])
+
+    def update_depth(self, d):
+        self.depth = d
+        for child in self.children:
+            child.update_depth(d+1)
 
 ####################### Terminal Node Classes #######################
 
 class ConstantNum(Node):
-    def __init__(self):
-        super().__init__(randint(0, 9), True)   # Numbers get random values
+    def __init__(self, depth=0):
+        super().__init__(randint(0, 9), True, depth)   # Numbers get random values
 
     def generate_subtree(self, nodes, terminals):
         pass
@@ -72,8 +77,8 @@ class ConstantNum(Node):
 
 
 class RandomNum(Node):
-    def __init__(self):
-        super().__init__("random", True)   # Numbers get random values
+    def __init__(self, depth=0):
+        super().__init__("random", True, depth)   # Numbers get random values
 
     def generate_subtree(self, nodes, terminals):
         pass
@@ -90,8 +95,8 @@ class RandomNum(Node):
 ####################### Arithmetic Node Classes #######################
 
 class Add(Node):
-    def __init__(self):
-        super().__init__("+", False)
+    def __init__(self, depth=0):
+        super().__init__("+", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -111,8 +116,8 @@ class Add(Node):
 
 
 class Sub(Node):
-    def __init__(self):
-        super().__init__("-", False)
+    def __init__(self, depth=0):
+        super().__init__("-", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -132,8 +137,8 @@ class Sub(Node):
 
 
 class Mul(Node):
-    def __init__(self):
-        super().__init__("*", False)
+    def __init__(self, depth=0):
+        super().__init__("*", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -153,8 +158,8 @@ class Mul(Node):
 
 
 class Div(Node):
-    def __init__(self):
-        super().__init__("/", False)
+    def __init__(self, depth=0):
+        super().__init__("/", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -178,8 +183,8 @@ class Div(Node):
 
 
 class Min(Node):
-    def __init__(self):
-        super().__init__("min", False)
+    def __init__(self, depth=0):
+        super().__init__("min", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -199,8 +204,8 @@ class Min(Node):
 
 
 class Max(Node):
-    def __init__(self):
-        super().__init__("max", False)
+    def __init__(self, depth=0):
+        super().__init__("max", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -220,8 +225,8 @@ class Max(Node):
 
 
 class Abs(Node):
-    def __init__(self):
-        super().__init__("abs", False)
+    def __init__(self, depth=0):
+        super().__init__("abs", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 1)
@@ -239,8 +244,8 @@ class Abs(Node):
 
 
 class Neg(Node):
-    def __init__(self):
-        super().__init__("neg", False)
+    def __init__(self, depth=0):
+        super().__init__("neg", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 1)
@@ -259,8 +264,8 @@ class Neg(Node):
 ####################### Logic Node Classes #######################
 
 class If_A_ge_B(Node):
-    def __init__(self):
-        super().__init__("if_>=", False)
+    def __init__(self, depth=0):
+        super().__init__("if_>=", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 4)
@@ -290,8 +295,8 @@ class If_A_ge_B(Node):
 
 
 class Compare(Node):
-    def __init__(self):
-        super().__init__("compare", False)
+    def __init__(self, depth=0):
+        super().__init__("compare", False, depth)
 
     def generate_subtree(self, nodes, terminals):
         super().generate_subtree(nodes, terminals, 2)
@@ -321,8 +326,8 @@ class Compare(Node):
 
 # Represents a basic measure in the fitness tree
 class MeasureNode(Node):
-    def __init__(self, measure):
-        super().__init__(measure, True)
+    def __init__(self, measure, depth=0):
+        super().__init__(measure, True, depth)
 
     def generate_subtree(self, nodes, terminals):
         pass
@@ -338,119 +343,97 @@ class MeasureNode(Node):
 
 #  Indicates if the individual can move in direction UP
 class CanMove_UP(MeasureNode):
-    def __init__(self):
-        super().__init__("CanMove_UP")
+    def __init__(self, depth=0):
+        super().__init__("CanMove_UP", depth)
 
 #  Indicates if the individual can move in direction DOWN
 class CanMove_DN(MeasureNode):
-    def __init__(self):
-        super().__init__("CanMove_DN")
+    def __init__(self, depth=0):
+        super().__init__("CanMove_DN", depth)
 
 #  Indicates if the individual can move in direction LEFT
 class CanMove_LT(MeasureNode):
-    def __init__(self):
-        super().__init__("CanMove_LT")
+    def __init__(self, depth=0):
+        super().__init__("CanMove_LT", depth)
 
 #  Indicates if the individual can move in direction RIGHT
 class CanMove_RT(MeasureNode):
-    def __init__(self):
-        super().__init__("CanMove_RT")
+    def __init__(self, depth=0):
+        super().__init__("CanMove_RT", depth)
 
-#  Represents the distance from the closest enemy WITHOUT separating walls in direction UP
-class NearEnemy_CLR_UP(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_CLR_UP")
-
-
-#  Represents the distance from the closest enemy WITHOUT separating walls in direction DOWN
-class NearEnemy_CLR_DN(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_CLR_DN")
+#  Represents the distance from the closest enemy in direction UP. The closest enemy is the enemy with the shortest
+# distance from the individual with minimum separating walls
+class EnemyDist_UP(MeasureNode):
+    def __init__(self, depth=0):
+        super().__init__("EnemyDist_UP", depth)
 
 
-#  Represents the distance from the closest enemy WITHOUT separating walls in direction LEFT
-class NearEnemy_CLR_LT(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_CLR_LT")
+#  Represents the distance from the closest enemy in direction DOWN. The closest enemy is the enemy with the shortest
+# distance from the individual with minimum separating walls
+class EnemyDist_DN(MeasureNode):
+    def __init__(self, depth=0):
+        super().__init__("EnemyDist_DN", depth)
 
+#  Represents the distance from the closest enemy in direction LEFT. The closest enemy is the enemy with the shortest
+# distance from the individual with minimum separating walls
+class EnemyDist_LT(MeasureNode):
+    def __init__(self, depth=0):
+        super().__init__("EnemyDist_LT", depth)
 
-#  Represents the distance from the closest enemy WITHOUT separating walls in direction RIGHT
-class NearEnemy_CLR_RT(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_CLR_RT")
-
-
-#  Represents the distance from the closest enemy WITH separating walls in direction UP
-class NearEnemy_WALL_UP(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_WALL_UP")
-
-
-#  Represents the distance from the closest enemy WITH separating walls in direction DOWN
-class NearEnemy_WALL_DN(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_WALL_DN")
-
-
-#  Represents the distance from the closest enemy WITH separating walls in direction LEFT
-class NearEnemy_WALL_LT(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_WALL_LT")
-
-
-#  Represesnts the distance from the closest enemy WITH separating walls in direction RIGHT
-class NearEnemy_WALL_RT(MeasureNode):
-    def __init__(self):
-        super().__init__("NearEnemy_WALL_RT")
-
+#  Represents the distance from the closest enemy in direction RIGHT. The closest enemy is the enemy with the shortest
+# distance from the individual with minimum separating walls
+class EnemyDist_RT(MeasureNode):
+    def __init__(self, depth=0):
+        super().__init__("EnemyDist_RT", depth)
 
 #  Indicates if the individual is in danger (close to a bomb) in direction UP
 class InDanger_UP(MeasureNode):
-    def __init__(self):
-        super().__init__("InDanger_UP")
+    def __init__(self, depth=0):
+        super().__init__("InDanger_UP", depth)
 
 
 #  Indicates if the individual is in danger (close to a bomb) in direction DOWN
 class InDanger_DN(MeasureNode):
-    def __init__(self):
-        super().__init__("InDanger_DN")
+    def __init__(self, depth=0):
+        super().__init__("InDanger_DN", depth)
 
 
 #  Indicates if the individual is in danger (close to a bomb) in direction LEFT
 class InDanger_LT(MeasureNode):
-    def __init__(self):
-        super().__init__("InDanger_LT")
+    def __init__(self, depth=0):
+        super().__init__("InDanger_LT", depth)
 
 
 #  Indicates if the individual is in danger (close to a bomb) in direction RIGHT
 class InDanger_RT(MeasureNode):
-    def __init__(self):
-        super().__init__("InDanger_RT")
+    def __init__(self, depth=0):
+        super().__init__("InDanger_RT", depth)
 
 
 #  Represents the distance from the closest turn if moving UP
 class NearTurn_UP(MeasureNode):
-    def __init__(self):
-        super().__init__("NearTurn_UP")
+    def __init__(self, depth=0):
+        super().__init__("NearTurn_UP", depth)
 
 
 #  Represents the distance from the closest turn if moving DOWN
 class NearTurn_DN(MeasureNode):
-    def __init__(self):
-        super().__init__("NearTurn_DN")
+    def __init__(self, depth=0):
+        super().__init__("NearTurn_DN", depth)
 
 
 #  Represents the distance from the closest turn if moving LEFT
 class NearTurn_LT(MeasureNode):
-    def __init__(self):
-        super().__init__("NearTurn_LT")
+    def __init__(self, depth=0):
+        super().__init__("NearTurn_LT", depth)
 
 
 #  Represents the distance from the closest turn if moving RIGHT
 class NearTurn_RT(MeasureNode):
-    def __init__(self):
-        super().__init__("NearTurn_RT")
+    def __init__(self, depth=0):
+        super().__init__("NearTurn_RT", depth)
 
-
-
-
+#  Indicates if the enemy is in range for the individual to place a bomb
+class EnemyInRange(MeasureNode):
+    def __init__(self, depth=0):
+        super().__init__("EnemyInRange", depth)

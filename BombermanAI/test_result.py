@@ -4,16 +4,17 @@ from .Agents.gp_agent import GP_Agent
 from .Agents.bot import Bot
 from .Agents.canvas_bot import CanvasBot
 from .Viewer.viewer import Viewer, MainFrame
+from .GPUtil.genome import Genome, NODES, TERMINALS
 from threading import Thread
 import pickle
 
-PICKLEFILE = 'generation_49.pickle'
+PICKLEFILE = 'generation_70.pickle'
 
-f = open(PICKLEFILE, "rb")
-generation = pickle.load(f)
-f.close()
+# f = open(PICKLEFILE, "rb")
+# generation = pickle.load(f)
+# f.close()
 
-gp_agent = GP_Agent('RESULT', generation[0])
+gp_agent = GP_Agent('RESULT', Genome(5, 5, NODES, TERMINALS))
 gp_agent.end_game = lambda p: None
 
 # players = [('GAL', '3', GreedyAgent('GAL'), 'localhost', 8037),

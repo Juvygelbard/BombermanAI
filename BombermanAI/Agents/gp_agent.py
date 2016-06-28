@@ -8,6 +8,7 @@ class GP_Agent(Agent):
         self.name = name
         self.genome = genome
         self.in_game = False
+        self.marks = ['A', 'B', 'C', 'D', 'E']
 
     def init_game(self):
         self.in_game = True
@@ -46,35 +47,28 @@ class GP_Agent(Agent):
         near_turn_right = self.dist_to_turn(d_map, x_pos, y_pos, 1, 0, "vertical")
 
         # add players to map
-        marks = ['A', 'B', 'C', 'D', 'E']
-        for (m, p) in zip(marks, players.values()):
+        for (m, p) in zip(self.marks, players.values()):
             d_map[p.y][p.x] = m
 
-        # calculate distance to enemy (no walls) measure
-        dist_enemy_c_up = self.bfs(d_map, x_pos, y_pos, 0, -1, [0], marks)
-        dist_enemy_c_down = self.bfs(d_map, x_pos, y_pos, 0, 1, [0], marks)
-        dist_enemy_c_left = self.bfs(d_map, x_pos, y_pos, -1, 0, [0], marks)
-        dist_enemy_c_right = self.bfs(d_map, x_pos, y_pos, 1, 0, [0], marks)
+        # calculate distance to enemy measure
+        dist_enemy_up = self.nearest_enemy(d_map, x_pos, y_pos, 0, -1)
+        dist_enemy_down = self.nearest_enemy(d_map, x_pos, y_pos, 0, 1)
+        dist_enemy_left = self.nearest_enemy(d_map, x_pos, y_pos, -1, 0)
+        dist_enemy_right = self.nearest_enemy(d_map, x_pos, y_pos, 1, 0)
 
-        # calculate distance to enemy (with walls) measure
-        dist_enemy_w_up = self.bfs(d_map, x_pos, y_pos, 0, -1, [0, 1], marks)
-        dist_enemy_w_down = self.bfs(d_map, x_pos, y_pos, 0, 1, [0, 1], marks)
-        dist_enemy_w_left = self.bfs(d_map, x_pos, y_pos, -1, 0, [0, 1], marks)
-        dist_enemy_w_right = self.bfs(d_map, x_pos, y_pos, 1, 0, [0, 1], marks)
+        # find if enemy in range measure
+        enemy_in_range = self.enemy_in_range(d_map, x_pos, y_pos)
 
         # build measures dict
         measures = {"CanMove_UP" : can_move_up,
                     "CanMove_DN" : can_move_down,
                     "CanMove_LT" : can_move_left,
                     "CanMove_RT" : can_move_right,
-                    "NearEnemy_CLR_UP" : dist_enemy_c_up,
-                    "NearEnemy_CLR_DN" : dist_enemy_c_down,
-                    "NearEnemy_CLR_LT": dist_enemy_c_left,
-                    "NearEnemy_CLR_RT": dist_enemy_c_right,
-                    "NearEnemy_WALL_UP": dist_enemy_w_up,
-                    "NearEnemy_WALL_DN" : dist_enemy_w_down,
-                    "NearEnemy_WALL_LT" : dist_enemy_w_left,
-                    "NearEnemy_WALL_RT" : dist_enemy_w_right,
+                    "EnemyDist_UP" : dist_enemy_up,
+                    "EnemyDist_DN" : dist_enemy_down,
+                    "EnemyDist_LT" : dist_enemy_left,
+                    "EnemyDist_RT" : dist_enemy_right,
+                    "EnemyInRange" : enemy_in_range,
                     "InDanger_UP" : in_danger_up,
                     "InDanger_DN" : in_danger_down,
                     "InDanger_LT" : in_danger_left,
@@ -112,6 +106,32 @@ class GP_Agent(Agent):
                 return 1
         return 0 # nothing
 
+    def enemy_in_range(self, map, x, y):
+        up, down , left, right = True, True, True, True
+        stop = [1, 2] + self.marks
+        for i in range(1, EXPLOSION_RADIUS+1):
+            if down:
+                if y+i>=len(map) or map[y+i][x] in stop:
+                    down = False
+                elif map[y+i][x] in self.marks:
+                    return 1
+            if up:
+                if y-i<0 or map[y-i][x] in stop:
+                    up = False
+                elif map[y-i][x] in self.marks:
+                    return 1
+            if right:
+                if x+i<0 or map[y][x+i] in stop:
+                    left = False
+                elif map[y][x+i] in self.marks:
+                    return 1
+            if left:
+                if x-i<0 or map[y][x-i] in stop:
+                    left = False
+                elif map[y][x-i] in self.marks:
+                    return 1
+        return 0 # nothing
+
     def dist_to_turn(self, map, x, y, d_x, d_y, turn):
         max_possible_dist = max(len(map), len(map[0]))
         for i in range(1, max_possible_dist):
@@ -147,9 +167,8 @@ class GP_Agent(Agent):
         q = Queue()
 
         # check if direction is legal
-        max_possible_val = max(len(map), len(map[0]))
         if y+d_y<0 or y+d_y>=len(map) or x+d_x<0 or x+d_x>=len(map[0]):
-            return max_possible_val
+            return False
 
         # duplicate map and place me on map
         d_map = [[x for x in y] for y in map]
@@ -181,7 +200,54 @@ class GP_Agent(Agent):
             # mark curr as visited
             d_map[curr_y][curr_x] = 'V'
 
-        return max_possible_val
+        return False
+
+    def get_accessible_walls(self, map, x, y):
+        ans = []
+
+        # duplicate map
+        d_map = [[xv for xv in y] for y in map]
+
+        # init queue and start walls dfs
+        q = Queue()
+        q.put((x, y))
+        while not q.empty():
+            curr = q.get(block=False)
+            curr_x, curr_y = curr[0], curr[1]
+
+            # found a wall
+            if d_map[curr_y][curr_x]==1:
+                ans.append(curr)
+            else:
+                # find next step
+                dirs = self.around_me(d_map, curr_x, curr_y, [0, 1] + self.marks)
+                if 'UP' in dirs:
+                    q.put((curr_x, curr_y-1))
+                if 'DOWN' in dirs:
+                    q.put((curr_x, curr_y+1))
+                if 'LEFT' in dirs:
+                    q.put((curr_x-1, curr_y))
+                if 'RIGHT' in dirs:
+                    q.put((curr_x+1, curr_y))
+
+            # mark curr as visited
+            d_map[curr_y][curr_x] = 'V'
+        return ans
+
+    def nearest_enemy(self, map, x, y, d_x, d_y):
+        # duplicate map and init
+        d_map = [[vx for vx in vy] for vy in map]
+        dist = False
+
+        while not dist:
+            # find enemy
+            dist = self.bfs(d_map, x, y, d_x, d_y, [0]+self.marks, self.marks)
+            # didn't found? remove one layer of walls
+            if not dist:
+                walls = self.get_accessible_walls(d_map, x, y)
+                for (w_x, w_y) in walls:
+                    d_map[w_y][w_x] = 0
+        return dist
 
     def end_game(self, players):
         if(self.in_game):

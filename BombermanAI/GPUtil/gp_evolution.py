@@ -8,16 +8,17 @@ from queue import Queue
 import pickle
 
 INIT_TREE_MAX_DEPTH = 3
+MAX_TREE_DEPTH = 12
 GAMES_PER_GENERATION = 3
 PLAYER_NAME = 'INDIVIDUAL'
 PLAYER_PASS = 'JOHNKOZARULEZ'
 PICKLE_NAME = 'generation_'
 
 # creates initial population
-def generate_random_pop(n, max_depth):
+def generate_random_pop(n, init_depth, max_depth):
     ans = []
     for i in range(n):
-        ans.append(Genome(max_depth, NODES, TERMINALS))
+        ans.append(Genome(init_depth, max_depth, NODES, TERMINALS))
     return ans
 
 # preforming rank selection: returns 2
@@ -52,13 +53,13 @@ def play_individual(server, port, genome_q, server_q, result_q):
     result_q.put((mean_score, genome))
     server_q.put((server, port))
 
-def start_evolution(server_list, pop_size, generations, filename=None, mutation_prob=0.1, crossover_prob=0.8, elitism=2):
+def start_evolution(server_list, pop_size, generations, filename=None, mutation_prob=0.1, crossover_prob=0.5, elitism=2):
     # either load an existing generation or generate initial population
     if filename:
         f = open(filename, "rb")
         pop = pickle.load(f)
     else:
-        pop = generate_random_pop(pop_size, INIT_TREE_MAX_DEPTH)
+        pop = generate_random_pop(pop_size, INIT_TREE_MAX_DEPTH, MAX_TREE_DEPTH)
 
     # init server queue
     server_q = Queue()
@@ -105,8 +106,7 @@ def start_evolution(server_list, pop_size, generations, filename=None, mutation_
             parent1, parent2 = generation_scores[parent1_idx][1], generation_scores[parent2_idx][1]
             child1, child2 = parent1.clone(), parent2.clone()
             # crossover
-            if(random() < crossover_prob):
-                child1.crossover(child2)
+            child1.crossover(child2, crossover_prob)
             # mutation
             child1.mutation(mutation_prob)
             child2.mutation(mutation_prob)

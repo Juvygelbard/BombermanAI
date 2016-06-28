@@ -1,33 +1,33 @@
 from .node import *
 from random import randint, random
 
-
 class Tree(object):
-    def __init__(self, max_depth, nodes, terminals,root=None):
+    def __init__(self, init_depth, max_depth, nodes, terminals, root=None):
         self.const_nodes = nodes
         self.const_terminals = terminals
+        self.init_depth = init_depth
         self.max_depth = max_depth
         self.root = root
         if not self.root:
-            self.root = self.gen_tree(max_depth, nodes, terminals)
+            self.root = self.gen_tree(init_depth, nodes, terminals)
 
-    def grow_tree(self, tree, max_depth, nodes, terminals):
-        if max_depth == 1:
+    def grow_tree(self, tree, init_depth, nodes, terminals):
+        if init_depth == 1:
             tree.generate_subtree([], terminals)
-        elif max_depth > 1:
+        elif init_depth > 1:
             tree.generate_subtree(nodes, terminals)
-            for subtree in tree.get_children():
-                self.grow_tree(subtree, max_depth-1, nodes, terminals)
+            for subtree in tree.children:
+                self.grow_tree(subtree, init_depth-1, nodes, terminals)
 
-    def gen_tree(self, max_depth, nodes, terminals):
-        if max_depth == 0:
+    def gen_tree(self, init_depth, nodes, terminals):
+        if init_depth == 0:
             return terminals[randint(0, len(terminals)-1)]()  # Constructs a random node
         else:
             if random() <= TERMINAL_RATIO:
                 tree = terminals[randint(0, len(terminals)-1)]()
             else:
                 tree = nodes[randint(0, len(nodes)-1)]()
-            self.grow_tree(tree, max_depth, nodes, terminals)
+            self.grow_tree(tree, init_depth, nodes, terminals)
             return tree
 
     def print_as_tree(self):
@@ -41,66 +41,48 @@ class Tree(object):
         if not nodes:
             return False, False
         parent = nodes[randint(0, len(nodes)-1)]  # Chooses random non terminal node
-        children = parent.get_children()
-        child_idx = randint(0, len(children)-1)  # Chooses a random child from the chosen node
+        child_idx = randint(0, len(parent.children)-1)  # Chooses a random child from the chosen node
         return parent, child_idx
 
-    # Will be used as a tool for the mutation and crossover genetic operators
-    def replace_node(self, new_genome):
+    def perform_mutation(self, n):
         nodes = self.root.get_non_terminal_list()
         part_num = randint(0, len(nodes))  # Chooses random non terminal node
         if part_num == len(nodes):  # 1/tree_size probability for the root to change
-            self.root = new_genome
+            self.root = self.gen_tree(min(n, self.max_depth) , self.const_nodes, self.const_terminals)
         else:
-            children = nodes[part_num].get_children()
-            child_idx = randint(0, len(children)-1)  # Chooses a random child from the chosen node
-            children[child_idx] = new_genome
-
-    def perform_mutation(self, n):
-        new_genome = self.gen_tree(n, self.const_nodes, self.const_terminals)
-        # TODO: DECIDE WHAT DEPTH SHOULD BE USED FOR MUTATION
-        self.replace_node(new_genome)
+            parent = nodes[part_num]
+            child_idx = randint(0, len(parent.children)-1)  # Chooses a random child from the chosen node TODO: inspect
+            parent.children[child_idx] = self.gen_tree(min(n, self.max_depth-(parent.depth+1)) , self.const_nodes, self.const_terminals) # grow a tree that dosn't exceed the given max depth
+            parent.children[child_idx].update_depth(parent.depth+1) # update the child's depth
 
     def perform_crossover(self, other):
+        # get random nodes for crossover := (parent, child_index)
         p1, c1 = self.get_random_child_for_crossover()
         p2, c2 = other.get_random_child_for_crossover()
-        if (not p1) or (not p2):    # make sure crossover is possible
+
+        # make sure crossover is possible
+        # one of the trees is just a node := don't preform crossover
+        if not p1 or not p2:
             return
-        tmp = p1.get_children()[c1]
-        p1.get_children()[c1] = p2.get_children()[c2]
-        p2.get_children()[c2] = tmp
+
+        # check max_depth is not exceeded; if it does, get a new node
+        while(p1.depth + p2.children[c2].get_height()-1 >= self.max_depth or
+              p2.depth + p1.children[c1].get_height()-1 >= other.max_depth):
+            p2, c2 = other.get_random_child_for_crossover()
+
+        # update nodes depths
+        p1.children[c1].update_depth(p2.depth+1)
+        p2.children[c2].update_depth(p1.depth+1)
+
+        # preform crossover
+        tmp = p1.children[c1]
+        p1.children[c1] = p2.children[c2]
+        p2.children[c2] = tmp
+
 
     def evaluate_tree(self, measures):
         return self.root.evaluate(measures)
 
     def clone(self):
         new_root = self.root.clone()
-        return Tree(self.max_depth, self.const_nodes, self.const_terminals, new_root)
-
-#  TIME FOR SOME FUCKING TESTS!!!
-# terminals = [ConstantNum, RandomNum, NearEnemy_CLR_UP, NearEnemy_CLR_DN, NearEnemy_CLR_LT, NearEnemy_CLR_RT,
-#              NearEnemy_WALL_UP, NearEnemy_WALL_DN, NearEnemy_WALL_LT, NearEnemy_WALL_RT,
-#              InDanger_UP, InDanger_DN, InDanger_LT, InDanger_RT,
-#              NearTurn_UP, NearTurn_DN, NearTurn_LT, NearTurn_RT]  # Also Random
-# nodes = [Add, Sub, Mul, Div, Min, Max, Abs, Neg, If_A_ge_B]
-
-# tree1 = Tree(2, nodes, terminals)
-# print("TREE1")
-# tree1.print_as_tree()
-#
-# tree2 = Tree(2, nodes, terminals)
-# print("TREE2")
-# tree2.print_as_tree()
-#
-#
-# # testing mutation
-# tree1.perform_mutation(1)
-# print("TREE1 AFTER MUTATION")
-# tree1.print_as_tree()
-#
-# # testing crossover
-# tree1.perform_crossover(tree2)
-# print("TREE1 AFTER CROSSOVER WITH TREE2")
-# tree1.print_as_tree()
-# print("TREE2 AFTER CROSSOVER WITH TREE1")
-# tree2.print_as_tree()
+        return Tree(self.init_depth, self.max_depth, self.const_nodes, self.const_terminals, new_root)
